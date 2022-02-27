@@ -8,18 +8,21 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
   </head>
-<body onload="settings()" style="background-color: #2d2c2d; color: #D0CCD0">
-  <div id="container" class="container-fluid" style="margin: 1rem;"></div>
+</body>
+<body onload="settings()" style="background-color: #2d2c2d; color: #D0CCD0; height: 100vh;">
+  <div id="container" class="container-fluid" style="margin: 1rem; height: 100%;"></div>
   <script>
     let container = document.getElementById("container");
     let content = null;
-    let c = [];
-    let b = [];
+    let bc = [];
     fetch('/api/bc.json')
     .then(response => response.json())
     .then(data => content = data);
 
+    let failureUrl = new URLSearchParams(location.search).get("url");
+
     const settings = () => {
+      bc = [];
       container.innerHTML = `
       <div class="row">
         <div class="col-md-12">
@@ -47,17 +50,23 @@
       e.preventDefault();
       let pc = document.getElementById('p').value;
       let ucb = document.getElementById('cb').checked;
-      c = selectRandomElements(content.cocks.normal, pc);
-      b = selectRandomElements(ucb ? content.babes.censored : content.babes.normal, pc);
+      let b = selectRandomElements(ucb ? content.babes.censored : content.babes.normal, pc);
+      let c = selectRandomElements(content.cocks.normal, pc);
+      for (let i = 0; i < b.length; i++) {
+        bc.push({
+          babe: b[i],
+          cock: c[i]
+        });
+      }
       container.innerHTML = "";
       for (let index = 0; index < pc; index++) {
         container.innerHTML += `
         <div class="row">
-          <div class="col-md-6 text-center">
-            <img src="${b[index]}" class="img-responsive center-block img-rounded" style="pointer-events: none;">
+          <div class="col-lg-6 col-md-6 col-xs-6">
+            <img id="viewer" src="${bc[index].babe}" class="img-responsive img-rounded" style="width: 100%; pointer-events: none; height: 50vh; max-width: 100%; object-fit: contain;">
           </div>
-          <div class="col-md-6 text-center">
-            <img src="${c[index]}" class="img-responsive center-block img-rounded" style="pointer-events: none;">
+          <div class="col-lg-6 col-md-6 col-xs-6">
+            <img id="viewer" src="${bc[index].cock}" class="img-responsive img-rounded" style="width: 100%; pointer-events: none; height: 50vh; max-width: 100%; object-fit: contain;">
           </div>
         </div>
         `;
@@ -72,19 +81,73 @@
         </div>
       </div>
       `;
+
+      bc = shuffle(bc);
     }
 
     const test = (i) => {
+      let cocks = selectRandomElements(content.cocks.normal, 2);
+      cocks.push(bc[i].cock);
+      cocks = shuffle(cocks);
       container.innerHTML = `
       <div class="row">
-          <div class="col-md-6 text-center">
-            <img src="${b[i]}" class="img-responsive center-block img-rounded" style="pointer-events: none;">
-          </div>
-          <div class="col-md-6 text-center">
-            <img src="${c[i]}" class="img-responsive center-block img-rounded" style="pointer-events: none;">
-          </div>
+        <div class="col-lg-12 col-md-12 col-xs-12">
+          <img id="viewer" src="${bc[i].babe}" class="img-responsive img-rounded"  style="width: 100%; pointer-events: none; height: 50vh; max-width: 100%; object-fit: contain;">
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-4 col-md-4 col-xs-4" onclick="check(${bc[i].cock == cocks[0]}, ${i + 1})">
+          <img id="viewer" src="${cocks[0]}" class="img-responsive img-rounded"  style="width: 100%; pointer-events: none; height: 50vh; max-width: 100%; object-fit: contain;">
+        </div>
+        <div class="col-lg-4 col-md-4 col-xs-4" onclick="check(${bc[i].cock == cocks[1]}, ${i + 1})">
+          <img id="viewer" src="${cocks[1]}" class="img-responsive img-rounded"  style="width: 100%; pointer-events: none; height: 50vh; max-width: 100%; object-fit: contain;">
+        </div>
+        <div class="col-lg-4 col-md-4 col-xs-4" onclick="check(${bc[i].cock == cocks[2]}, ${i + 1})">
+          <img id="viewer" src="${cocks[2]}" class="img-responsive img-rounded"  style="width: 100%; pointer-events: none; height: 50vh; max-width: 100%; object-fit: contain;">
+        </div>
       </div>
       `;
+    }
+
+    const failure = () => {
+      container.innerHTML = `
+      <div class="row" style="height: 100%;">
+        <div class="col text-center" style="height: 100%;">
+          <h2>Failure</h2>
+          <br/>
+          <form onsubmit="settings()">
+            <input class="btn btn-danger btn-lg btn-block" type="submit" value="You Failed">
+          </form>
+        </div>
+      </div>
+      `;
+      if (failureUrl != null) {
+          fetch(failureUrl);
+      }
+    }
+
+    const success = () => {
+      container.innerHTML = `
+      <div class="row" style="height: 100%;">
+        <div class="col text-center" style="height: 100%;">
+          <h2>Success</h2>
+          <br/>
+          <form onsubmit="settings()">
+            <input class="btn btn-success btn-lg btn-block" type="submit" value="Congrats you passed">
+          </form>
+        </div>
+      </div>
+      `;
+    }
+
+    const check = (correct, i) => {
+      if(i >= bc.length) {
+        success();
+      } else if(correct) {
+        test(i);
+      } else {
+        failure();
+      }
     }
     
     const selectRandomElem = (array) => {
