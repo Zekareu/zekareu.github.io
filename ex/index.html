@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Zekareu</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+</head>
+<body style="background-color: #2d2c2d; color: #D0CCD0">
+  <div id="container" class="container-fluid" style="margin: 1rem;">
+    <div class="row">
+      <div class="col-md-12">
+        </br>
+        <textarea id="urllist" name="urllist" style="min-width: 100%" rows="4"></textarea>
+      </div>
+      <div class="col-md-12">
+        </br>
+        <button class="btn btn-primary btn-lg btn-block" onclick="update()">Click me</button> 
+    </div>
+    </div>
+  </div>
+  <script>
+    const update = async () => {
+      let urllist = document.getElementById("urllist").value.split('\n');
+      let container = document.getElementById("container");
+      let value = "";
+      for (const url of urllist) {
+        await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`)
+        .then(response => response.json())
+        .then(data => {
+          new DOMParser().parseFromString(data.contents, 'text/html').querySelectorAll('.image-thumb').forEach(image => {
+            console.log(image.getAttribute('data-lazy'));
+            value += `<div>"${image.getAttribute('data-lazy')}",</div>`;
+          });
+        });
+      }
+      container.innerHTML = `
+      <div class="row">
+        <div class="col-md-12">
+          ${value}
+        </div>
+      </div>`;
+    };
+  </script>
+</body>
+</html>

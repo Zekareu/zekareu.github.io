@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>BAMG</title>
+  <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  </head>
+<body onload="settings()" style="background-color: #2d2c2d; color: #D0CCD0; height: 100vh;">
+  <div id="container" class="container-fluid" style="margin: 1rem; height: 100%;"></div>
+  <script>
+    let container = document.getElementById("container");
+    let content = null;
+    let selectedElements = null;
+    let interval = null;
+    let time = 5;
+    let amount = 3;
+    fetch('/api/ba.json')
+    .then(response => response.json())
+    .then(data => content = data);
+
+    let failureUrl = new URLSearchParams(location.search).get("url");
+
+    const settings = () => {
+      container.innerHTML = `
+      <div class="row">
+        <div class="col">
+          <h2>Settings</h2>
+          <form onsubmit="start(event)">
+            <label id="girlsLabel" for="girls"></label>
+            <input onchange="updateGirls(this.value)" type="range" id="girls" name="girls" value="${amount}" min="1" max="10">
+            <br/>
+            <label id="timeLabel" for="time"></label>
+            <input onchange="updateTime(this.value)" type="range" id="time" name="time" value="${time}" min="5" max="60">
+            <br/>
+            <input class="btn btn-primary btn-lg btn-block" type="submit" value="Start">
+          </form>
+        </div>
+      </div>`;
+      updateGirls(amount);
+      updateTime(time);
+    }
+
+    const updateGirls = (value) => {
+      amount = value;
+      document.getElementById("girlsLabel").innerText = `Girls: ${amount}`;
+    }
+
+    const updateTime = (value) => {
+      time = value;
+      document.getElementById("timeLabel").innerText = `Time: ${time}`;
+    }
+
+    const start = (e) => {
+      e.preventDefault();
+      next(0);
+    }
+
+    const pagination = (e, value) => {
+      e.preventDefault();
+      next(value);
+    }
+
+    const next = (value) => {
+      selectedElements = selectRandomElements(content.images, amount);
+      container.innerHTML = `
+      <div class="row" style="height: 95%;">
+        <div class="col text-center" style="height: 95%;">
+          <img id="viewer" src="${selectedElements[value].img}" class="center-block img-rounded" style="pointer-events: none; height: 95%; max-width: 100%; object-fit: contain;">
+        </div>
+      </div>
+      <div class="row" style="height: 5%;">
+        <div class="col text-center" style="height: 5%;">
+          </br>
+            <div class="progress">
+              <div id="progress" class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+          </br>
+        </div>
+      </div>
+      `;
+
+      let viewer = document.getElementById("viewer");
+
+      let progress = document.getElementById('progress');
+      progress.style.width = "100%";
+
+      let countdown = time;
+
+      interval = window.setInterval(() => {
+        countdown--;
+        progress.style.width = countdown * (100 / time) + "%";
+        if(countdown < 0) {
+          countdown = time;
+          progress.style.width = countdown * (100 / time) + "%";
+          value++;
+          if(value >= amount) {
+            window.clearInterval(interval);
+            for (let i = 0; i < selectedElements.length; i++) {
+              selectedElements[i]['id'] = i;
+
+            }
+            selectedElements = selectRandomElements(selectedElements, amount);
+            test(selectedElements, 0);
+            return;
+          }
+          viewer.src = selectedElements[value].img;
+        }
+      }, 1000);
+    }
+
+    const createButtons = (array, correct, index) => {
+      console.log(correct);
+      let content = "";
+      array.forEach(element => {
+        content += `
+        <button type="button" class="btn btn-primary btn-lg btn-block" style="background-color: ${element}" onclick="check(${correct === element}, ${index})">${element}</button>
+        <br/>`;
+      });
+      return content;
+    }
+
+    const test = (selectedElements, index) => {
+      if(index >= selectedElements.length) {
+        settings();
+        return;
+      }
+      let test = selectRandomElem(selectedElements[index].answers);
+      console.log(test);
+      container.innerHTML = `
+      <div class="row">
+        <div class="col text-center">
+          <h2>${content.questions[test.element.id].text.replace('$', selectedElements[index].id + 1)}?</h2>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col text-center">
+          ${createButtons(content.questions[test.element.id].options, test.element.answer, index)}
+        </div>
+      </div>
+      `;
+    }
+
+    const check = (value, index) => {
+      console.log(value);
+      if(value) {
+        if(index >= selectedElements.length - 1) {
+          success();
+          return;
+        }
+        test(selectedElements, ++index);
+      } else {
+        // Fail
+        failure();
+      }
+    }
+
+    const failure = () => {
+      container.innerHTML = `
+      <div class="row" style="height: 100%;">
+        <div class="col text-center" style="height: 100%;">
+          <h2>Failure</h2>
+          <br/>
+          <form onsubmit="settings()">
+            <input class="btn btn-danger btn-lg btn-block" type="submit" value="You Failed">
+          </form>
+        </div>
+      </div>
+      `;
+      if (failureUrl != null) {
+          fetch(failureUrl);
+      }
+    }
+
+    const success = () => {
+      container.innerHTML = `
+      <div class="row" style="height: 100%;">
+        <div class="col text-center" style="height: 100%;">
+          <h2>Success</h2>
+          <br/>
+          <form onsubmit="settings()">
+            <input class="btn btn-success btn-lg btn-block" type="submit" value="Congrats you passed">
+          </form>
+        </div>
+      </div>
+      `;
+    }
+
+    const selectRandomElem = (array) => {
+      const index = Math.floor(Math.random() * array.length);
+      return { index: index, element: array[index]};
+    };
+
+    const selectRandomElements = (array, nr) => {
+      return shuffle(array).slice(0, nr);
+    }
+
+    const shuffle = (array) => {
+      let counter = array.length;
+      while (counter > 0) {
+          let index = Math.floor(Math.random() * counter);
+          counter--;
+          let temp = array[counter];
+          array[counter] = array[index];
+          array[index] = temp;
+      }
+      return array;
+    }
+  </script>
+</body>
+</html>

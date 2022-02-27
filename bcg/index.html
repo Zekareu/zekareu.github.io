@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>BCG</title>
+  <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  </head>
+<body onload="settings()" style="background-color: #2d2c2d; color: #D0CCD0">
+  <div id="container" class="container-fluid" style="margin: 1rem;"></div>
+  <script>
+    let container = document.getElementById("container");
+    let content = null;
+    let c = [];
+    let b = [];
+    fetch('/api/bc.json')
+    .then(response => response.json())
+    .then(data => content = data);
+
+    const settings = () => {
+      container.innerHTML = `
+      <div class="row">
+        <div class="col-md-12">
+          </br>
+          <form onsubmit="setSettings(event)">
+            <div class="form-check">
+              <label id="pc" for="p">Pairs: 2</label>
+              <input onchange="updateCounter()" type="range" id="p" name="pairs" value="2" min="2" max="5">
+            </div>
+            <div class="form-check">
+              <input type="checkbox" id="cb" class="form-check-input" name="cb" checked>
+              <label for="cb">Censored Babes</label>
+            </div>
+            <input class="btn btn-primary btn-lg btn-block" type="submit" value="Start">
+          </form>
+        </div>
+      </div>`;
+    }
+
+    const updateCounter = () => {
+      document.getElementById('pc').innerHTML = "Pairs: " + document.getElementById('p').value;
+    }
+    
+    const setSettings = (e) => {
+      e.preventDefault();
+      let pc = document.getElementById('p').value;
+      let ucb = document.getElementById('cb').checked;
+      c = selectRandomElements(content.cocks.normal, pc);
+      b = selectRandomElements(ucb ? content.babes.censored : content.babes.normal, pc);
+      container.innerHTML = "";
+      for (let index = 0; index < pc; index++) {
+        container.innerHTML += `
+        <div class="row">
+          <div class="col-md-6 text-center">
+            <img src="${b[index]}" class="img-responsive center-block img-rounded" style="pointer-events: none;">
+          </div>
+          <div class="col-md-6 text-center">
+            <img src="${c[index]}" class="img-responsive center-block img-rounded" style="pointer-events: none;">
+          </div>
+        </div>
+        `;
+      }
+      
+      container.innerHTML += `
+      <div class="row">
+        <div class="col">
+          </br>
+          <button type="button" onclick="test(0)" id="nb" class="btn btn-primary btn-lg btn-block">Start Test</button>
+          </br>
+        </div>
+      </div>
+      `;
+    }
+
+    const test = (i) => {
+      container.innerHTML = `
+      <div class="row">
+          <div class="col-md-6 text-center">
+            <img src="${b[i]}" class="img-responsive center-block img-rounded" style="pointer-events: none;">
+          </div>
+          <div class="col-md-6 text-center">
+            <img src="${c[i]}" class="img-responsive center-block img-rounded" style="pointer-events: none;">
+          </div>
+      </div>
+      `;
+    }
+    
+    const selectRandomElem = (array) => {
+      return array[Math.floor(Math.random() * array.length)];
+    }
+
+    const selectRandomElements = (array, nrOfOwners) => {
+      return shuffle(array).slice(0, nrOfOwners);
+    }
+
+    const shuffle = (array) => {
+      let counter = array.length;
+      while (counter > 0) {
+          let index = Math.floor(Math.random() * counter);
+          counter--;
+          let temp = array[counter];
+          array[counter] = array[index];
+          array[index] = temp;
+      }
+      return array;
+    }
+  </script>
+</body>
+</html>

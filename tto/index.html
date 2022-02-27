@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>TTO</title>
+  <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  </head>
+<body onload="settings()" style="background-color: #2d2c2d; color: #D0CCD0">
+  <div id="container" class="container-fluid" style="margin: 1rem;"></div>
+  <script>
+    let container = document.getElementById("container");
+    let time = 1800000;
+    let content = null;
+    let value = 0;
+    let interval = null;
+    fetch('/api/tto.json')
+    .then(response => response.json())
+    .then(data => content = data);
+
+    const settings = () => {
+      container.innerHTML = `
+      <div class="row">
+        <div class="col">
+          <h2>Settings</h2>
+          <form onsubmit="setSettings(event)">
+            <label id="timeLabel" for="time">Time: ${time / 60000}min</label>
+            <input onchange="updateCounter()" type="range" id="time" name="time" value="${time / 60000}" min="1" max="180">
+            <br/>
+            <input class="btn btn-primary btn-lg btn-block" type="submit" value="Start">
+          </form>
+        </div>
+      </div>`;
+    }
+
+    const updateCounter = () => {
+      document.getElementById('timeLabel').innerHTML = `Time: ${document.getElementById('time').value}min`;
+    }
+
+    const setSettings = (e) => {
+      e.preventDefault();
+      value = 0;
+      time = document.getElementById('time').value * 60000;
+      let result = selectRandomElem(content.punishments)
+      container.innerHTML = `
+      <div class="row">
+        <div class="col text-center">
+          </br>
+          <img id="viewer" src="${result.image}" class="img-responsive center-block img-rounded" style="pointer-events: none;">
+        </div>
+      </div>
+      <div class="row">
+        <div class="col text-center">
+          </br>
+          <p>${result.description}</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col text-center">
+          </br>
+            <div class="progress">
+              <div id="progress" class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+          </br>
+        </div>
+      </div>
+      <div class="row" id="sb">
+          <div class="col">
+            <br/>
+            <button type="button" class="btn btn-primary btn-lg btn-block" onclick="start()">Start</button>
+            <br/>
+        </div>
+      </div>
+      `;
+    }
+
+    const start = () => {
+      document.getElementById('sb').style.display = "none";
+      let progress = document.getElementById('progress');
+      interval = window.setInterval(() => {
+        console.log(value);
+        if(value >= 100) {
+          window.clearInterval(interval);
+          let mySound = new sound("finished.mp3");
+          mySound.play();
+          settings();
+          return;
+        }
+        progress.style.width = value + "%";
+        value++;
+      }, time / 100);
+    }
+
+    function sound(src) {
+      this.sound = document.createElement("audio");
+      this.sound.src = src;
+      this.sound.setAttribute("preload", "auto");
+      this.sound.setAttribute("controls", "none");
+      this.sound.style.display = "none";
+      document.body.appendChild(this.sound);
+      this.play = function(){
+          this.sound.play();
+      }
+      this.stop = function(){
+          this.sound.pause();
+      }    
+    }
+
+
+    const selectRandomElem = (array) => {
+      return array[Math.floor(Math.random() * array.length)];
+    }
+  </script>
+</body>
+</html>

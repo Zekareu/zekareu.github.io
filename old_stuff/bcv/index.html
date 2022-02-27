@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CB</title>
+  <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  </head>
+<body onload="settings()" style="background-color: #2d2c2d; color: #D0CCD0">
+  <div id="container" class="container-fluid" style="margin: 1rem;"></div>
+  <script>
+    let container = document.getElementById("container");
+    let startvalue = 0;
+    let index = 0;
+    const min = 5000;
+    const max = 20000;
+    let content = null;
+    fetch('/api/bc.json')
+    .then(response => response.json())
+    .then(data => content = data);
+
+    const settings = () => {
+      container.innerHTML = `
+      <div class="row">
+        <div class="col">
+          <h2>Settings</h2>
+          <form onsubmit="setSettings(event)">
+            <input class="btn btn-primary btn-lg btn-block" type="submit" value="Start">
+          </form>
+        </div>
+      </div>`;
+    }
+    
+    const setSettings = (e) => {
+      e.preventDefault();
+      startvalue = random(0, 30000);
+      index = startvalue;
+      container.innerHTML = `
+      <div class="row">
+        <div class="col text-center">
+          </br>
+          <h2 id="counter">Loading</h2>
+          <img id="viewer" src="" class="center-block img-rounded" width="80%" style="pointer-events: none; border: thick solid green;">
+        </div>
+      </div>
+      `;
+      document.getElementById('viewer').onload = () => {
+        if((index - startvalue) > 1) {
+          viewer.style.borderColor = Math.random() < 0.75 ? "red" : "green";
+        }
+      };
+      next(document.getElementById('viewer'), document.getElementById('counter'));
+    }
+
+    const next = (viewer, counter) => {
+      index++;        
+      updatePic(viewer, counter, selectRandomElem(content.gifs));
+      let time = random(min, max);
+      window.setTimeout(next, time, viewer, counter);
+    }
+
+    const updatePic = (viewer, counter, dataurl) => {
+      viewer.src = dataurl;
+      counter.innerHTML = `${index - startvalue} Picture`;
+    }
+
+    const selectRandomElem = (array) => {
+      return array[Math.floor(Math.random() * array.length)];
+    }
+
+    const random = (min, max) => {
+      return min + Math.floor(Math.random() * Math.floor(max - min));
+    }
+  </script>
+</body>
+</html>

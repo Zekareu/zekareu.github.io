@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CB</title>
+  <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  </head>
+<body onload="settings()" style="background-color: #2d2c2d; color: #D0CCD0">
+  <div id="container" class="container-fluid" style="margin: 1rem;"></div>
+  <script>
+    let container = document.getElementById("container");
+    let startvalue = 0;
+    let index = 0;
+    const min = 5000;
+    const max = 20000;
+
+    const settings = () => {
+      container.innerHTML = `
+      <div class="row">
+        <div class="col-md-12">
+          </br>
+          <form onsubmit="picture(event)">
+            <input class="btn btn-primary btn-lg btn-block" type="submit" value="Start">
+          </form>
+        </div>
+      </div>`;
+    }
+    
+    const picture = (e) => {
+      e.preventDefault();
+      startvalue = random(0, 30000);
+      index = startvalue;
+      container.innerHTML = `
+      <div class="row">
+        <div class="col text-center">
+          </br>
+          <h2 id="counter">Loading</h2>
+          <img id="viewer" src="" class="img-responsive center-block img-rounded" style="pointer-events: none; border: thick solid green;">
+        </div>
+      </div>
+      `;
+      document.getElementById('viewer').onload = () => {
+        if((index - startvalue) > 1) {
+          viewer.style.borderColor = Math.random() < 0.75 ? "red" : "green";
+        }
+      };
+      next(document.getElementById('viewer'), document.getElementById('counter'));
+    }
+
+    const next = (viewer, counter) => {
+      https://api.allorigins.win/get?url=https%3A%2F%2Frealbooru.com%2Findex.php%3Fpage%3Dpost%26s%3Drandom
+      index++;
+      fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://allgirl.booru.org/index.php?page=post&s=random')}&${index}`)
+        .then(response => response.json())
+        .then(data => {
+          viewer.src = new DOMParser().parseFromString(data.contents, 'text/html').getElementById('image').src;
+          counter.innerHTML = `${index - startvalue} Picture`;
+        });
+      let time = random(min, max);
+      window.setTimeout(next, time, viewer, counter);
+    }
+
+    const random = (min, max) => {
+      return min + Math.floor(Math.random() * Math.floor(max - min));
+    }
+  </script>
+</body>
+</html>

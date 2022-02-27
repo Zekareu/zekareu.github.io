@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>NCMG</title>
+  <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  </head>
+<body onload="settings()" style="background-color: #2d2c2d; color: #D0CCD0; height: 100vh;">
+  <div id="container" class="container-fluid" style="margin: 1rem; height: 100%;"></div>
+  <script>
+    let container = document.getElementById("container");
+    let content = null;
+    let selectedOwners = null;
+    let ownerCount = 2;
+    let imagesPerOwner = 2 + 3;
+    let time = 5;
+    let interval = null;
+    let nameList = [
+      "Jason",
+      "Brown",
+      "Jason",
+      "Luv",
+      "Maxwell",
+      "Isiah",
+      "Yahshua",
+      "Ricky",
+      "Nat",
+      "Flash",
+      "Sean",
+      "Michael",
+      "Jax",
+      "Slayher",
+      "Rico",
+      "Strong",
+      "Mickey",
+      "Mod",
+      "Piper",
+      "Joss",
+    ]
+    fetch('/api/ncmg.json')
+    .then(response => response.json())
+    .then(data => content = data);
+
+    let failureUrl = new URLSearchParams(location.search).get("url");
+
+    const settings = () => {
+      container.innerHTML = `
+      <div class="row">
+        <div class="col">
+          <h2>Settings</h2>
+          <form onsubmit="start(event)">
+            <label id="ownersLabel" for="owners"></label>
+            <input onchange="updateOwners(this.value)" type="range" id="owners" name="owners" value="${ownerCount}" min="2" max="10">
+            <br/>
+            <label id="timeLabel" for="time"></label>
+            <input onchange="updateTime(this.value)" type="range" id="time" name="time" value="${time}" min="5" max="60">
+            <br/>
+            <input class="btn btn-primary btn-lg btn-block" type="submit" value="Start">
+          </form>
+        </div>
+      </div>`;
+      updateOwners(ownerCount);
+      updateTime(time);
+    }
+
+    const updateOwners = (value) => {
+      ownerCount = value;
+      document.getElementById("ownersLabel").innerText = `Owners: ${ownerCount}`;
+    }
+
+    const updateTime = (value) => {
+      time = value;
+      document.getElementById("timeLabel").innerText = `Time: ${time}`;
+    }
+
+    const start = (e) => {
+      e.preventDefault();
+      let owners = selectRandomElements(content, ownerCount);
+      let names = selectRandomElements(nameList, ownerCount);
+      let tmp = [];
+      let tmpNames = [];
+
+      owners.forEach((owner, id )=> {
+        tmpNames.push(names[id]);
+        tmp.push({
+          "name": names[id],
+          "pics": selectRandomElements(owner.pics, imagesPerOwner)
+        });
+      });
+
+      selectedOwners = {
+        "names": tmpNames,
+        "owners": tmp
+      };
+      console.log(tmp);
+      learn();
+    }
+
+    const displayOwner = (owner) => {
+      return `
+      <div class="row">
+        <div class="col">
+          <h2>${owner.name}</h2>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-4 col-md-4 col-xs-4">
+          <img id="viewer" src="${owner.pics[0]}" class="img-responsive img-rounded" style="width: 100%; pointer-events: none; object-fit: contain;">
+        </div>
+        <div class="col-lg-4 col-md-4 col-xs-4">
+          <img id="viewer" src="${owner.pics[1]}" class="img-responsive img-rounded" style="width: 100%; pointer-events: none; object-fit: contain;">
+        </div>
+        <div class="col-lg-4 col-md-4 col-xs-4">
+          <img id="viewer" src="${owner.pics[2]}" class="img-responsive img-rounded" style="width: 100%; pointer-events: none; object-fit: contain;">
+        </div>
+      </div>
+      <div class="row">
+        <div class="col">
+          <br/>
+        </div>
+      </div>
+      `;
+    }
+
+    const learn = () => {
+      container.innerHTML = "";
+      selectedOwners.owners.forEach(owner => {
+        container.innerHTML += displayOwner(owner);
+      });
+      container.innerHTML += `
+      <div class="row">
+        <div class="col">
+          <button type="button" class="btn btn-primary btn-lg btn-block"" onclick="test(0)">Start</button>
+        </div>
+      </div>
+      `;
+
+      selectedOwners = {
+        "names": selectedOwners.names,
+        "owners": shuffle(selectedOwners.owners.flatMap(owner => {
+          return owner.pics.flatMap(pic => {
+            return {
+              "name": owner.name,
+              "pic": pic
+            }
+          });
+        }))
+      }
+    }
+
+    const test = (value) => {
+      console.log(selectedOwners.owners);
+
+      container.innerHTML = `
+      <div class="row" style="height: 100%;">
+        <div class="col text-center" style="height: 100%;">
+          <h2>Who is it?</h2>
+          <img id="viewer" src="${selectedOwners.owners[value].pic}" class="center-block img-rounded" style="pointer-events: none; height: 60%; max-width: 100%; object-fit: contain;">
+        </div>
+      </div>
+      <div class="row">
+        <div class="col text-center">
+          </br>
+            <div class="progress">
+              <div id="progress" class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+          </br>
+        </div>
+      </div>
+      `;
+
+      container.innerHTML += createButtons(selectedOwners.names, selectedOwners.owners[value].name, value);
+
+      let progress = document.getElementById('progress');
+      progress.style.width = "100%";
+
+      let countdown = time;
+      interval = window.setInterval(() => {
+        countdown--;
+        progress.style.width = countdown * (100 / time) + "%";
+        if(countdown <= 0) {
+          // Fail
+          check(false, value);
+        }
+      }, 1000);
+    }
+
+    const createButtons = (array, correct, index) => {
+      console.log(correct);
+      let content = "";
+      array.forEach(element => {
+        content += `
+        <button type="button" class="btn btn-primary btn-lg btn-block" style="background-color: ${element}" onclick="check(${correct === element}, ${index})">${element}</button>
+        <br/>`;
+      });
+      return content;
+    }
+
+    const check = (value, index) => {
+      window.clearInterval(interval);
+      interval = null;
+      console.log(value);
+      if(value) {
+        if(index >= selectedOwners.owners.length - 1) {
+          success();
+          return;
+        }
+        test(++index);
+      } else {
+        // Fail
+        failure();
+      }
+    }
+
+    const failure = () => {
+      container.innerHTML = `
+      <div class="row" style="height: 100%;">
+        <div class="col text-center" style="height: 100%;">
+          <h2>Failure</h2>
+          <br/>
+          <form onsubmit="settings()">
+            <input class="btn btn-danger btn-lg btn-block" type="submit" value="You Failed">
+          </form>
+        </div>
+      </div>
+      `;
+      if (failureUrl != null) {
+          fetch(failureUrl);
+      }
+    }
+
+    const success = () => {
+      container.innerHTML = `
+      <div class="row" style="height: 100%;">
+        <div class="col text-center" style="height: 100%;">
+          <h2>Success</h2>
+          <br/>
+          <form onsubmit="settings()">
+            <input class="btn btn-success btn-lg btn-block" type="submit" value="Congrats you passed">
+          </form>
+        </div>
+      </div>
+      `;
+    }
+
+    const selectRandomElem = (array) => {
+      const index = Math.floor(Math.random() * array.length);
+      return { index: index, element: array[index]};
+    };
+
+    const selectRandomElements = (array, nr) => {
+      return shuffle(array).slice(0, nr);
+    }
+
+    const shuffle = (array) => {
+      let counter = array.length;
+      while (counter > 0) {
+          let index = Math.floor(Math.random() * counter);
+          counter--;
+          let temp = array[counter];
+          array[counter] = array[index];
+          array[index] = temp;
+      }
+      return array;
+    }
+  </script>
+</body>
+</html>

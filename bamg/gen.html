@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>BAMG</title>
+  <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  </head>
+<body style="background-color: #2d2c2d; color: #D0CCD0; height: 100vh;">
+  <div id="container" class="container-fluid" style="margin: 1rem; height: 100%;"></div>
+  <script>
+    let container = document.getElementById("container");
+    let viewer = null;
+    let content = null;
+    let result = null;
+    let imageSrc = null;
+    fetch('/api/ba.json')
+    .then(response => response.json())
+    .then(data => {
+      content = data;
+      result = Array.from("".repeat(content.questions.length));
+      settings();
+    });
+
+    const settings = () => {
+      container.innerHTML = `
+      <div class="row">
+        <div class="col-xs-6">
+          <h2>Settings</h2>
+          <form onsubmit="start(event)">
+            <input class="" type="text" onchange="imageChange(this.value)">
+            <div id="questions"></div>
+            <br/>
+            <input class="btn btn-primary btn-lg btn-block" type="submit" value="Start">
+          </form>
+        </div>
+        <div class="col-xs-6" style="height: 100vh;">
+          <img id="viewer" src="" class="center-block img-rounded" style="pointer-events: none; height: 100%; object-fit: contain;">
+        </div>
+      </div>
+      <div class="row">
+        <div id="imagesContainer" class="col" />
+      </div>`;
+
+      let questionsContainer = document.getElementById("questions");
+      viewer = document.getElementById("viewer");
+      imagesContainer = document.getElementById("imagesContainer");
+      
+      for (let i = 0; i < content.questions.length; i++) {
+        questionsContainer.innerHTML += `<h3>${content.questions[i].text}</h3>`
+        questionsContainer.innerHTML += `<input type="button" onclick="update(-1, ${i})" name="clear" value="clear"/>`
+        content.questions[i].options.forEach((t, answerIndex) => {
+          questionsContainer.innerHTML += `<input type="button" onclick="update(${answerIndex}, ${i})" name="${content.questions[i].text}" value="${t}" style="background-color: ${t}"/>`
+        });
+      }
+
+      for (const babe of content.images) {
+        console.log(babe.img);
+        imagesContainer.innerHTML += `<img id="viewer" src="${babe.img}" class="img-rounded" style="width: 30%; object-fit: contain;">`
+      }
+    }
+
+    const update = (answerIndex, questionIndex) => {
+      console.log(answerIndex);
+      console.log(questionIndex);
+      if(answerIndex !== -1) {
+        result[questionIndex] = content.questions[questionIndex].options[answerIndex];
+      } else {
+        result[questionIndex] = "";
+      }
+    }
+
+    const imageChange = (src) => {
+      console.log(src);
+      imageSrc = src;
+      viewer.src = src;
+    }
+
+    const start = (e) => {
+      e.preventDefault();
+      console.log(result);
+      gen();
+    }
+
+    const gen = () => {
+      container.innerHTML = `
+      <div class="row" style="height: 100%;">
+        <div class="col text-center" style="height: 100%;">
+          <textarea id="json" style="height: 100%; width: 100%;">
+        </div>
+      </div>
+      `;
+      let babe = {};
+      babe.img = imageSrc;
+      babe.answers = [];
+      result.forEach((x, i) => {
+        if(x !== "") {
+          babe.answers.push({
+            "id": i,
+            "answer": x
+          });
+        }
+      });
+      console.log(result);
+      console.log(JSON.stringify(babe));
+      document.getElementById("json").value = JSON.stringify(babe, null, 2);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>QT</title>
+  <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  </head>
+<body onload="settings()" style="background-color: #2d2c2d; color: #D0CCD0; height: 100vh;">
+  <div id="container" class="container-fluid" style="height: 100%;"></div>
+  <script>
+    let container = document.getElementById("container");
+    let time = 60;
+    let value = 0;
+    let interval = null;
+    let index = Math.floor(Math.random() * Math.floor(30000));
+
+    const settings = () => {
+      container.innerHTML = `
+      <div class="row">
+        <div class="col">
+          <h2>Settings</h2>
+          <form onsubmit="picture(event)">
+            <label id="timeLabel" for="time">Time: ${time}s</label>
+            <input onchange="updateCounter()" type="range" id="time" name="time" value="${time}" min="10" max="180">
+            <br/>
+            <input class="btn btn-primary btn-lg btn-block" type="submit" value="Start">
+          </form>
+        </div>
+      </div>`;
+    }
+
+    const updateCounter = () => {
+      document.getElementById('timeLabel').innerHTML = `Time: ${document.getElementById('time').value}s`;
+    }
+    
+    const picture = (e) => {
+      e.preventDefault();
+      time = document.getElementById('time').value;
+      container.innerHTML = `
+      <div class="row" style="height: 90%;">
+        <div class="col text-center" style="height: 100%;">
+          <img id="viewer" src="" class="center-block img-rounded" style="pointer-events: none; height: 100%; max-width: 100%; object-fit: contain;">
+        </div>
+      </div>
+      <div class="row">
+        <div class="col text-center">
+          </br>
+            <div class="progress">
+              <div id="progress" class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+          </br>
+        </div>
+      </div>
+      `;
+      let src = new URLSearchParams(location.search).get("url");
+      if(src === null) {
+        fetch(`https://api.allorigins.win/get?url=https%3A%2F%2Fcensored.booru.org%2Findex.php%3Fpage%3Dpost%26s%3Drandom%26r%3D${index}`)
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('viewer').src = new DOMParser().parseFromString(data.contents, 'text/html').getElementById('image').src;
+          update(document.getElementById('viewer'), 0);
+        })
+        index++;
+      } else {
+        document.getElementById('viewer').src = src;
+        update(document.getElementById('viewer'), 0);
+      }
+    }
+
+    const back = () => {
+      container.innerHTML = `
+      <div class="row">
+        <div class="col">
+          <form onsubmit="settings()">
+            <input class="btn btn-primary btn-lg btn-block" type="submit" value="Finished?">
+          </form>
+        </div>
+      </div>`;
+    }
+
+    const update = (viewer, value) => {
+      console.log(time);
+      let progress = document.getElementById('progress');
+      interval = window.setInterval(() => {
+        console.log(value);
+        if(value >= 100) {
+          window.clearInterval(interval);
+          back();
+          return;
+        }
+        progress.style.width = value + "%";
+        value++;
+        viewer.style.filter = `grayscale(${value / 180}) blur(${value * 0.06}px)`;
+        viewer.style.opacity = `${1 - (value * 0.01)}`;
+      }, (time * 1000) / 100);
+    }
+
+    const random = (min, max) => {
+      return min + Math.floor(Math.random() * Math.floor(max - min));
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>STG</title>
+  <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  </head>
+<body onload="settings()" style="background-color: #2d2c2d; color: #D0CCD0">
+  <div id="container" class="container-fluid" style="margin: 1rem;"></div>
+  <script>
+    let container = document.getElementById("container");
+    let content = null;
+    fetch('/api/stg.json')
+    .then(response => response.json())
+    .then(data => content = data);
+
+    const settings = () => {
+      container.innerHTML = `
+      <div class="row">
+        <div class="col">
+          <h2>Settings</h2>
+          <form onsubmit="setSettings(event)">
+            <br/>
+            <input class="btn btn-primary btn-lg btn-block" type="submit" value="Start">
+          </form>
+        </div>
+      </div>`;
+    }
+
+    const setSettings = (e) => {
+      if(e != null) {
+        e.preventDefault();
+      }
+      let result = selectRandomElem(content.tasks)
+      container.innerHTML = `
+      <div class="row">
+        <div class="col text-center">
+          </br>
+          <img id="viewer" src="${result.image}" class="img-responsive center-block img-rounded" style="pointer-events: none;">
+        </div>
+      </div>
+      <div class="row">
+        <div class="col text-center">
+          </br>
+          <p>${result.description} for ${3 + Math.floor(Math.random() * Math.floor(7))} minutes</p>
+        </div>
+      </div>
+      <div class="row">
+          <div class="col">
+            <br/>
+            <button type="button" class="btn btn-primary btn-lg btn-block" onclick="setSettings(null)">Next</button>
+            <br/>
+        </div>
+      </div>
+      `;
+    }
+
+    const selectRandomElem = (array) => {
+      return array[Math.floor(Math.random() * array.length)];
+    }
+  </script>
+</body>
+</html>

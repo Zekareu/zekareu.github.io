@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CMG</title>
+  <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  </head>
+<body onload="settings()" style="background-color: #2d2c2d; color: #D0CCD0">
+  <div id="container" class="container-fluid" style="margin: 1rem;"></div>
+  <script>
+    let container = document.getElementById("container");
+    let content = null;
+    let men = null;
+    fetch('/api/co.json')
+    .then(response => response.json())
+    .then(data => content = data);
+
+    const settings = () => {
+      container.innerHTML = `
+      <div class="row">
+        <div class="col">
+          <h2>Settings</h2>
+          <form onsubmit="setSettings(event)">
+            <label id="ownersLabel" for="owners">Owners: 2</label>
+            <input onchange="updateCounter()" type="range" id="owners" name="owners" value="2" min="2" max="5">
+            <br/>
+            <input class="btn btn-primary btn-lg btn-block" type="submit" value="Start">
+          </form>
+        </div>
+      </div>`;
+    }
+
+    const updateCounter = () => {
+      document.getElementById('ownersLabel').innerHTML = "Owners: " + document.getElementById('owners').value;
+    }
+
+    const setSettings = (e) => {
+      e.preventDefault();
+      nrOfOwners = document.getElementById('owners').value;
+      men = selectRandomElements(content.men, nrOfOwners);
+      learn(men, nrOfOwners);
+    }
+
+    const learn = (nrOfOwners) => {
+      container.innerHTML = `
+      <div class="row">
+        <div class="col">
+          <h2>Learn</h2>
+        </div>
+      </div>
+      `;
+      men.forEach(man => {
+        container.innerHTML += `
+        <div class="row">
+          <div class="col">
+            <h2>${man.name}</h2>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-4">
+            <img src="${man.top}" class="img-responsive center-block img-rounded" style="pointer-events: none;">
+          </div>
+          <div class="col-md-4">
+            <img src="${man.left}" class="img-responsive center-block img-rounded" style="pointer-events: none;">
+          </div>
+          <div class="col-md-4">
+            <img src="${man.right}" class="img-responsive center-block img-rounded" style="pointer-events: none;">
+          </div>
+        </div>
+        `;
+      })
+      container.innerHTML += `
+      <div class="row">
+          <div class="col">
+            <br/>
+            <button type="button" class="btn btn-primary btn-lg btn-block" onclick="test(0, 0)">Start Test</button>
+            <br/>
+        </div>
+      </div>
+      `;
+    }
+
+    const test = (index, points) => {
+      container.innerHTML = `
+      <div class="row">
+        <div class="col-md-4">
+          <h2>${points}/${men.length * 5} Points</h2>
+        </div>
+        <div class="col-md-4">
+          <h2>${index + 1} of ${men.length * 5} Pictures</h2>
+        </div>
+      </div>
+      `;
+      let correct = selectRandomElem(men);
+      container.innerHTML += `
+      <div class="row">
+          <div class="col text-center">
+            <img src="${selectRandomElem(correct.pics)}" class="img-responsive center-block img-rounded" style="pointer-events: none;">
+        </div>
+      </div>
+      `;
+      let value = "";
+      men.forEach(man => {
+        value += `
+        <div class="col-md-12">
+          <br/>
+          <button type="button" class="btn btn-primary btn-lg btn-block" onclick="check(${index}, '${correct.name}', ${points}, '${man.name}')">${man.name}</button>
+        </div>
+        `;
+      })
+      container.innerHTML += `<div class="row">` + value + `</div><br/>`;
+    }
+
+    const check = (index, answer, points, option) => {
+      let value = `Wrong`;
+      if(answer === option) {
+        points++;
+        value = `Correct`;
+      }
+      container.innerHTML = `
+      <div class="row">
+        <div class="col-md-4">
+          <h2>${points}/${men.length * 5} Points</h2>
+        </div>
+        <div class="col-md-4">
+          <h2>${index + 1} of ${men.length * 5} Pictures</h2>
+        </div>
+      </div>
+      <div class="row">
+          <div class="col-md-4">
+            <h2>${value}</h2>
+        </div>
+      </div>
+      `;
+      if(index >= men.length * 5) {
+        container.innerHTML += `
+        <div class="row">
+          <div class="col">
+            <br/>
+            <button type="button" class="btn btn-danger btn-lg btn-block" onclick="settings()">Finished</button>
+            <br/>
+          </div>
+        </div>
+        `;
+        return;
+      }
+      container.innerHTML += `
+      <div class="row">
+          <div class="col">
+            <br/>
+            <button type="button" class="btn btn-primary btn-lg btn-block" onclick="test(${index + 1}, ${points})">Next</button>
+            <br/>
+        </div>
+      </div>
+      `;
+    }
+
+    const selectRandomElem = (array) => {
+      return array[Math.floor(Math.random() * array.length)];
+    }
+
+    const selectRandomElements = (array, nrOfOwners) => {
+      return shuffle(array).slice(0, nrOfOwners);
+    }
+
+    const shuffle = (array) => {
+      let counter = array.length;
+      while (counter > 0) {
+          let index = Math.floor(Math.random() * counter);
+          counter--;
+          let temp = array[counter];
+          array[counter] = array[index];
+          array[index] = temp;
+      }
+      return array;
+    }
+  </script>
+</body>
+</html>
